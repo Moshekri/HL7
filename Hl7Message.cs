@@ -26,8 +26,13 @@ namespace HL7
         /// Create new instance of Hl7Message 
         /// </summary>
         /// <param name="message">String representing the complete HL7 message</param>
+        /// <exception cref="InvalidDataException">InvalidDataException</exception>
         public Hl7Message(string message)
         {
+            if (!IsHL7Message(message))
+            {
+                throw new InvalidDataException($"The data provided does not contain a valid hl7 message \r\n Data was  : {message} ");
+            }
             OriginalMessage = message;
             logger = LogManager.GetCurrentClassLogger();
             if (message.Substring(0, 3) == "MSH")
@@ -40,10 +45,12 @@ namespace HL7
                 throw new Exception("File/Message Not An HL7 Object");
             }
         }
+
         /// <summary>
         ///  Create new instance of Hl7Message 
         /// </summary>
         /// <param name="file">FileInfo of the file with the HL7 Message</param>
+        /// <exception cref="">InvalidDataException</exception>
         public Hl7Message(FileInfo file)
         {
             logger = LogManager.GetCurrentClassLogger();
@@ -66,6 +73,10 @@ namespace HL7
             {
                 sr = new StreamReader(fs);
                 string message = sr.ReadToEnd();
+                if (!IsHL7Message(message))
+                {
+                    throw new InvalidDataException($"The data provided does not contain a valid hl7 message \r\n Data was  : {message} ");
+                }
                 OriginalMessage = message;
                 ParseMessage(message);
                 OriginalZriSegment = GetOriginalZriSegment(message);
@@ -82,6 +93,10 @@ namespace HL7
             }
 
         }
+
+
+
+
         private void ParseMessage(string message)
         {
             GetPatientDemographics(message);
@@ -189,7 +204,7 @@ namespace HL7
                 LogExeception(ex);
                 return null;
             }
-            
+
         }
         private byte[] GetUUDecodeData(string data)
         {
@@ -208,7 +223,7 @@ namespace HL7
                 LogExeception(ex);
                 return null;
             }
-            
+
         }
 
         /// <summary>
@@ -221,6 +236,7 @@ namespace HL7
             byte[] binaryData = GetUUDecodeData(pdfHl7Decoded);
             return binaryData;
         }
+
         private void LogExeception(Exception ex)
         {
             logger.Debug(ex.Message);
@@ -230,11 +246,12 @@ namespace HL7
                 logger.Debug(ex.Message);
             }
         }
+
         /// <summary>
         /// Saves the embedded ECG record as PDF
         /// </summary>
         /// <param name="path">Destination to save the PDF</param>
-        public  void SavePDFFile(String path)
+        public void SavePDFFile(String path)
         {
             //UUDecoding here
             byte[] decodedDataBytes = this.GetOriginalBinaryDataPDF();
@@ -252,6 +269,15 @@ namespace HL7
 
         }
 
+        private bool IsHL7Message(string message)
+        {
+            if (message.Contains("PID") && message.Contains("MSH") && message.Contains("PV1"))
+            {
+                return true;
+            }
+            return false;
+
+        }
     }
 }
 
