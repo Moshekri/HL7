@@ -12,7 +12,14 @@ namespace HL7
         public string PatientId { get; set; }
         public DateTime BirthDate { get; set; }
         public string Gender { get; set; }
+        /// <summary>
+        /// Data from zri/zpd segment , this data is with
+        /// the GE hl7 special encoding AND is UuEncoded
+        /// </summary>
         public string OriginalZriSegment { get; set; }
+        /// <summary>
+        /// Original message without any changes 
+        /// </summary>
         public string OriginalMessage { get; set; }
 
         /// <summary>
@@ -108,87 +115,100 @@ namespace HL7
         }
         private string GetOriginalZriSegment(string message)
         {
-            return  message.Substring(message.IndexOf("ZRI", StringComparison.Ordinal), message.Length - message.IndexOf("ZRI", StringComparison.Ordinal));
+            return message.Substring(message.IndexOf("ZRI", StringComparison.Ordinal), message.Length - message.IndexOf("ZRI", StringComparison.Ordinal));
         }
-
-
         private string GetHl7DecodedZriSegment()
         {
-            
-            string[] zriComponents = this.OriginalZriSegment.Split('|');
-            string[] pdfSubComponents = zriComponents[3].Split('^');
-            int originalDataSize = int.Parse(pdfSubComponents[2]);
-            string hl7AndUuencodedData = pdfSubComponents[4];
-
-            StringBuilder hl7DecodedDataList = new StringBuilder();
-
-            for (int i = 0; i <= originalDataSize; i++)
+            try
             {
-                if(i == originalDataSize)
+                string[] zriComponents = this.OriginalZriSegment.Split('|');
+                string[] pdfSubComponents = zriComponents[3].Split('^');
+                int originalDataSize = int.Parse(pdfSubComponents[2]);
+                string hl7AndUuencodedData = pdfSubComponents[4];
+                StringBuilder hl7DecodedDataList = new StringBuilder();
+                for (int i = 0; i <= originalDataSize; i++)
                 {
-                    break;
-                }
+                    if (i == originalDataSize)
+                    {
+                        break;
+                    }
 
-                if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'F' && hl7AndUuencodedData[i + 2] == '\\')
-                {
-                    hl7DecodedDataList.Append('|');
-                    i += 2;
+                    if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'F' && hl7AndUuencodedData[i + 2] == '\\')
+                    {
+                        hl7DecodedDataList.Append('|');
+                        i += 2;
+                    }
+                    else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'S' && hl7AndUuencodedData[i + 2] == '\\')
+                    {
+                        hl7DecodedDataList.Append('^');
+                        i += 2;
+                    }
+                    else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'T' && hl7AndUuencodedData[i + 2] == '\\')
+                    {
+                        hl7DecodedDataList.Append('&');
+                        i += 2;
+                    }
+                    else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'R' && hl7AndUuencodedData[i + 2] == '\\')
+                    {
+                        hl7DecodedDataList.Append('~');
+                        i += 2;
+                    }
+                    else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'E' && hl7AndUuencodedData[i + 2] == '\\')
+                    {
+                        hl7DecodedDataList.Append('\\');
+                        i += 2;
+                    }
+                    else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'D' && hl7AndUuencodedData[i + 4] == '\\' && hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'A' && hl7AndUuencodedData[i + 4] == '\\')
+                    {
+                        //logger.Debug($"line number {lineNumber}  i : {i} (found \r\n)");
+                        //lineNumber++;
+                        hl7DecodedDataList.Append('\r');
+                        hl7DecodedDataList.Append('\n');
+                        i += 8;
+                    }
+                    else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'D' && hl7AndUuencodedData[i + 4] == '\\')
+                    {
+                        hl7DecodedDataList.Append('\r');
+                        i += 4;
+                    }
+                    else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'A' && hl7AndUuencodedData[i + 4] == '\\')
+                    {
+                        hl7DecodedDataList.Append('\n');
+                        i += 4;
+
+                    }
+                    else
+                    {
+                        hl7DecodedDataList.Append(hl7AndUuencodedData[i]);
+                    }
                 }
-                else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'S' && hl7AndUuencodedData[i + 2] == '\\')
-                {
-                    hl7DecodedDataList.Append('^');
-                    i += 2;
-                }
-                else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'T' && hl7AndUuencodedData[i + 2] == '\\')
-                {
-                    hl7DecodedDataList.Append('&');
-                    i += 2;
-                }
-                else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'R' && hl7AndUuencodedData[i + 2] == '\\')
-                {
-                    hl7DecodedDataList.Append('~');
-                    i += 2;
-                }
-                else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'E' && hl7AndUuencodedData[i + 2] == '\\')
-                {
-                    hl7DecodedDataList.Append('\\');
-                    i += 2;
-                }
-                else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'D' && hl7AndUuencodedData[i + 4] == '\\' && hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'A' && hl7AndUuencodedData[i + 4] == '\\')
-                {
-                    //logger.Debug($"line number {lineNumber}  i : {i} (found \r\n)");
-                    //lineNumber++;
-                    hl7DecodedDataList.Append('\r');
-                    hl7DecodedDataList.Append('\n');
-                    i += 8;
-                }
-                else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'D' && hl7AndUuencodedData[i + 4] == '\\')
-                {
-                    hl7DecodedDataList.Append('\r');
-                    i += 4;
-                }
-                else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'A' && hl7AndUuencodedData[i + 4] == '\\')
-                {
-                    hl7DecodedDataList.Append('\n');
-                    i += 4;
-                    
-                }
-                else
-                {
-                    hl7DecodedDataList.Append(hl7AndUuencodedData[i]);
-                }
+                return hl7DecodedDataList.ToString();
             }
-            return hl7DecodedDataList.ToString();
+            catch (Exception ex)
+            {
+                LogExeception(ex);
+                return null;
+            }
+            
         }
         private byte[] GetUUDecodeData(string data)
         {
-            byte[] dataBytes = Encoding.ASCII.GetBytes(data);
-            MemoryStream inputStream = new MemoryStream(dataBytes);
-            MemoryStream outputStream = new MemoryStream();
+            try
+            {
+                byte[] dataBytes = Encoding.ASCII.GetBytes(data);
+                MemoryStream inputStream = new MemoryStream(dataBytes);
+                MemoryStream outputStream = new MemoryStream();
 
-            Codecs.UUDecode(inputStream, outputStream);
-            byte[] decodedDataBytes = outputStream.ToArray();
-            return decodedDataBytes;
+                Codecs.UUDecode(inputStream, outputStream);
+                byte[] decodedDataBytes = outputStream.ToArray();
+                return decodedDataBytes;
+            }
+            catch (Exception ex)
+            {
+                LogExeception(ex);
+                return null;
+            }
+            
         }
 
         /// <summary>
@@ -200,6 +220,15 @@ namespace HL7
             string pdfHl7Decoded = GetHl7DecodedZriSegment();
             byte[] binaryData = GetUUDecodeData(pdfHl7Decoded);
             return binaryData;
+        }
+        private void LogExeception(Exception ex)
+        {
+            logger.Debug(ex.Message);
+            while (ex.InnerException != null)
+            {
+                ex = ex.InnerException;
+                logger.Debug(ex.Message);
+            }
         }
 
     }
