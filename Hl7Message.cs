@@ -1,12 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using NLog;
+
 namespace HL7
 {
     public class Hl7Message
     {
-        Logger logger;
+        
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string PatientId { get; set; }
@@ -34,7 +34,7 @@ namespace HL7
                 throw new InvalidDataException($"The data provided does not contain a valid hl7 message . ");
             }
             OriginalMessage = message;
-            logger = LogManager.GetCurrentClassLogger();
+        
             if (message.Substring(0, 3) == "MSH")
             {
                 ParseMessage(message);
@@ -53,8 +53,7 @@ namespace HL7
         /// <exception cref="">InvalidDataException</exception>
         public Hl7Message(FileInfo file)
         {
-            logger = LogManager.GetCurrentClassLogger();
-
+          
             BinaryReader br = null;
             StreamReader sr = null;
             FileStream fs = null;
@@ -63,9 +62,9 @@ namespace HL7
                 fs = new FileStream(file.FullName, FileMode.Open);
                 br = new BinaryReader(fs);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                LogExeception(e);
+                throw ex;
             }
 
             byte[] msh = br.ReadBytes(3);
@@ -83,9 +82,6 @@ namespace HL7
                 fs.Close();
                 br.Close();
 
-            
-            
-
         }
 
 
@@ -100,7 +96,6 @@ namespace HL7
         private void GetPatientDemographics(string message)
         {
 
-            logger.Debug($"Parsing message - Getting Patient information from message ... ");
             string pid = message.Substring(message.IndexOf("PID", StringComparison.Ordinal), message.Length - message.IndexOf("PID", StringComparison.Ordinal));
             string[] pidComponents = pid.Split(new char[] { '|' }, StringSplitOptions.None);
             this.PatientId = pidComponents[2];
@@ -119,7 +114,6 @@ namespace HL7
             }
             this.LastName = pidComponents[5].Split('^')[0];
             this.FirstName = pidComponents[5].Split('^')[1];
-            logger.Debug($"Message parsed successfully , patient id {PatientId}");
 
         }
         private string GetOriginalZriSegment(string message)
@@ -195,8 +189,7 @@ namespace HL7
             }
             catch (Exception ex)
             {
-                LogExeception(ex);
-                return null;
+                throw (ex);
             }
 
         }
@@ -214,8 +207,7 @@ namespace HL7
             }
             catch (Exception ex)
             {
-                LogExeception(ex);
-                return null;
+                throw (ex);
             }
 
         }
@@ -231,15 +223,7 @@ namespace HL7
             return binaryData;
         }
 
-        private void LogExeception(Exception ex)
-        {
-            logger.Debug(ex.Message);
-            while (ex.InnerException != null)
-            {
-                ex = ex.InnerException;
-                logger.Debug(ex.Message);
-            }
-        }
+        
 
         /// <summary>
         /// Saves the embedded ECG record as PDF
