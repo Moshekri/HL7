@@ -31,7 +31,7 @@ namespace HL7
         {
             if (!IsHL7Message(message))
             {
-                throw new InvalidDataException($"The data provided does not contain a valid hl7 message \r\n Data was  : {message} ");
+                throw new InvalidDataException($"The data provided does not contain a valid hl7 message . ");
             }
             OriginalMessage = message;
             logger = LogManager.GetCurrentClassLogger();
@@ -55,9 +55,9 @@ namespace HL7
         {
             logger = LogManager.GetCurrentClassLogger();
 
-            BinaryReader br;
-            StreamReader sr;
-            FileStream fs;
+            BinaryReader br = null;
+            StreamReader sr = null;
+            FileStream fs = null;
             try
             {
                 fs = new FileStream(file.FullName, FileMode.Open);
@@ -65,17 +65,16 @@ namespace HL7
             }
             catch (Exception e)
             {
-                throw new Exception(e.Message);
+                LogExeception(e);
             }
 
             byte[] msh = br.ReadBytes(3);
-            if (Encoding.UTF8.GetString(msh) == "MSH")
-            {
+            
                 sr = new StreamReader(fs);
                 string message = sr.ReadToEnd();
                 if (!IsHL7Message(message))
                 {
-                    throw new InvalidDataException($"The data provided does not contain a valid hl7 message \r\n Data was  : {message} ");
+                    throw new InvalidDataException($"The data provided does not contain a valid hl7 message . ");
                 }
                 OriginalMessage = message;
                 ParseMessage(message);
@@ -84,13 +83,8 @@ namespace HL7
                 fs.Close();
                 br.Close();
 
-            }
-            else
-            {
-                fs.Close();
-                br.Close();
-                throw new Exception("File/Message Not An HL7 Object");
-            }
+            
+            
 
         }
 
