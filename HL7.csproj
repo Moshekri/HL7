@@ -56,7 +56,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FileSaver.cs" />
     <Compile Include="Hl7Message.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UUencode_Decode.cs" />

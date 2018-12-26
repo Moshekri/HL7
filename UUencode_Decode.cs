@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace HL7
 
 {
-    public static class Codecs
+    internal static class Codecs
     {
         private static readonly byte[] UUEncMap = new byte[]
         {

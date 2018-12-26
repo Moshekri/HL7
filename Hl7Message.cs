@@ -230,6 +230,27 @@ namespace HL7
                 logger.Debug(ex.Message);
             }
         }
+        /// <summary>
+        /// Saves the embedded ECG record as PDF
+        /// </summary>
+        /// <param name="path">Destination to save the PDF</param>
+        public  void SavePDFFile(String path)
+        {
+            //UUDecoding here
+            byte[] decodedDataBytes = this.GetOriginalBinaryDataPDF();
+
+            FileStream pdfFileStream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
+            using (pdfFileStream)
+            {
+                BinaryWriter br = new BinaryWriter(pdfFileStream);
+                using (br)
+                {
+                    br.Write(decodedDataBytes);
+                    br.Flush();
+                }
+            }
+
+        }
 
     }
 }
