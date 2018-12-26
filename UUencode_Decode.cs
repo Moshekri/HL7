@@ -41,6 +41,11 @@ namespace HL7
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
 
+        /// <summary>
+        /// Decode UUencoded data
+        /// </summary>
+        /// <param name="input">Input stream</param>
+        /// <param name="output">Output straem of binary data</param>
         public static void UUDecode(System.IO.Stream input, System.IO.Stream output)
         {
             if (input == null)
@@ -102,6 +107,11 @@ namespace HL7
             }
         }
 
+        /// <summary>
+        /// Encode data in UUencoding
+        /// </summary>
+        /// <param name="input">Input stream</param>
+        /// <param name="output">Output straem of UUencoded data</param>
         public static void UUEncode(System.IO.Stream input, System.IO.Stream output)
         {
             if (input == null)

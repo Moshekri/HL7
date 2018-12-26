@@ -1,48 +1,53 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
-using HL7;
-
+using NLog;
 namespace HL7
 {
     public class Hl7Message
     {
+        Logger logger;
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string PatientId { get; set; }
         public DateTime BirthDate { get; set; }
         public string Gender { get; set; }
-        public string ZriSegment { get; set; }
+        public string OriginalZriSegment { get; set; }
         public string OriginalMessage { get; set; }
 
+        /// <summary>
+        /// Create new instance of Hl7Message 
+        /// </summary>
+        /// <param name="message">String representing the complete HL7 message</param>
         public Hl7Message(string message)
         {
+            OriginalMessage = message;
+            logger = LogManager.GetCurrentClassLogger();
             if (message.Substring(0, 3) == "MSH")
             {
                 ParseMessage(message);
+                OriginalZriSegment = GetOriginalZriSegment(message);
             }
             else
             {
                 throw new Exception("File/Message Not An HL7 Object");
             }
         }
-
         /// <summary>
-        /// 
+        ///  Create new instance of Hl7Message 
         /// </summary>
-        /// <param name="file"></param>
-        /// <exception cref="system.argument"></exception>
-        
+        /// <param name="file">FileInfo of the file with the HL7 Message</param>
         public Hl7Message(FileInfo file)
         {
+            logger = LogManager.GetCurrentClassLogger();
+
             BinaryReader br;
             StreamReader sr;
             FileStream fs;
             try
             {
-                 fs = new FileStream(file.FullName, FileMode.Open);
-                 br = new BinaryReader(fs);
+                fs = new FileStream(file.FullName, FileMode.Open);
+                br = new BinaryReader(fs);
             }
             catch (Exception e)
             {
@@ -54,7 +59,9 @@ namespace HL7
             {
                 sr = new StreamReader(fs);
                 string message = sr.ReadToEnd();
+                OriginalMessage = message;
                 ParseMessage(message);
+                OriginalZriSegment = GetOriginalZriSegment(message);
                 sr.Close();
                 fs.Close();
                 br.Close();
@@ -71,13 +78,13 @@ namespace HL7
         private void ParseMessage(string message)
         {
             GetPatientDemographics(message);
-            SetZriSegment(message);
+            GetOriginalZriSegment(message);
 
         }
         private void GetPatientDemographics(string message)
         {
 
-
+            logger.Debug($"Parsing message - Getting Patient information from message ... ");
             string pid = message.Substring(message.IndexOf("PID", StringComparison.Ordinal), message.Length - message.IndexOf("PID", StringComparison.Ordinal));
             string[] pidComponents = pid.Split(new char[] { '|' }, StringSplitOptions.None);
             this.PatientId = pidComponents[2];
@@ -96,21 +103,19 @@ namespace HL7
             }
             this.LastName = pidComponents[5].Split('^')[0];
             this.FirstName = pidComponents[5].Split('^')[1];
-
+            logger.Debug($"Message parsed successfully , patient id {PatientId}");
 
         }
-        private void SetZriSegment(string message)
+        private string GetOriginalZriSegment(string message)
         {
-            this.ZriSegment = message.Substring(message.IndexOf("ZRI", StringComparison.Ordinal), message.Length - message.IndexOf("ZRI", StringComparison.Ordinal));
+            return  message.Substring(message.IndexOf("ZRI", StringComparison.Ordinal), message.Length - message.IndexOf("ZRI", StringComparison.Ordinal));
         }
-        /// <summary>
-        /// This Method will return HL7 Decoded ZRI Segment 
-        /// </summary>
-        /// <returns>String</returns>
-        internal string GetHl7DecodedZriSegment()
-        {
 
-            string[] zriComponents = this.ZriSegment.Split('|');
+
+        private string GetHl7DecodedZriSegment()
+        {
+            
+            string[] zriComponents = this.OriginalZriSegment.Split('|');
             string[] pdfSubComponents = zriComponents[3].Split('^');
             int originalDataSize = int.Parse(pdfSubComponents[2]);
             string hl7AndUuencodedData = pdfSubComponents[4];
@@ -119,6 +124,11 @@ namespace HL7
 
             for (int i = 0; i <= originalDataSize; i++)
             {
+                if(i == originalDataSize)
+                {
+                    break;
+                }
+
                 if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'F' && hl7AndUuencodedData[i + 2] == '\\')
                 {
                     hl7DecodedDataList.Append('|');
@@ -146,6 +156,8 @@ namespace HL7
                 }
                 else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'D' && hl7AndUuencodedData[i + 4] == '\\' && hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'A' && hl7AndUuencodedData[i + 4] == '\\')
                 {
+                    //logger.Debug($"line number {lineNumber}  i : {i} (found \r\n)");
+                    //lineNumber++;
                     hl7DecodedDataList.Append('\r');
                     hl7DecodedDataList.Append('\n');
                     i += 8;
@@ -159,6 +171,7 @@ namespace HL7
                 {
                     hl7DecodedDataList.Append('\n');
                     i += 4;
+                    
                 }
                 else
                 {
@@ -167,8 +180,28 @@ namespace HL7
             }
             return hl7DecodedDataList.ToString();
         }
+        private byte[] GetUUDecodeData(string data)
+        {
+            byte[] dataBytes = Encoding.ASCII.GetBytes(data);
+            MemoryStream inputStream = new MemoryStream(dataBytes);
+            MemoryStream outputStream = new MemoryStream();
 
-        
+            Codecs.UUDecode(inputStream, outputStream);
+            byte[] decodedDataBytes = outputStream.ToArray();
+            return decodedDataBytes;
+        }
+
+        /// <summary>
+        /// returns the original PDF binary data of the ZRI/ZPD segment
+        /// </summary>
+        /// <returns>PDF binary data byte[]</returns>
+        public byte[] GetOriginalBinaryDataPDF()
+        {
+            string pdfHl7Decoded = GetHl7DecodedZriSegment();
+            byte[] binaryData = GetUUDecodeData(pdfHl7Decoded);
+            return binaryData;
+        }
+
     }
 }
 

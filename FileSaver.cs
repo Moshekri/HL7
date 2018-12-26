@@ -8,12 +8,12 @@ namespace HL7
 {
     public static class FileSaver
     {
-        public static void SavePdfFile(String fileToSave, Hl7Message message)
+        public static void SavePdfFile(String path, Hl7Message message)
         {
             //UUDecoding here
-            byte[] decodedDataBytes = UuDecodeData(message.GetHl7DecodedZriSegment());
+            byte[] decodedDataBytes = message.GetOriginalBinaryDataPDF();
             
-            FileStream pdfFileStream = new FileStream(fileToSave, FileMode.Create,FileAccess.ReadWrite);
+            FileStream pdfFileStream = new FileStream(path, FileMode.Create,FileAccess.ReadWrite);
             using (pdfFileStream)
             {
                 BinaryWriter br = new BinaryWriter(pdfFileStream);
@@ -26,7 +26,7 @@ namespace HL7
 
         }
 
-        private static byte[] UuDecodeData(string data)
+        public static byte[] UuDecodeData(string data)
         {
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
             MemoryStream inputStream = new MemoryStream(dataBytes);
