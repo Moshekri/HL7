@@ -4,6 +4,10 @@ using System.Text;
 
 namespace HL7
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <exception cref="">InvaliDataEceeption</exception>
     public class Hl7Message
     {
         
@@ -22,11 +26,13 @@ namespace HL7
         /// </summary>
         public string OriginalMessage { get; set; }
 
+
+
         /// <summary>
         /// Create new instance of Hl7Message 
         /// </summary>
         /// <param name="message">String representing the complete HL7 message</param>
-        /// <exception cref="InvalidDataException">InvalidDataException</exception>
+        /// <exception cref="InvalidDataException"></exception>
         public Hl7Message(string message)
         {
             if (!IsHL7Message(message))
@@ -50,7 +56,7 @@ namespace HL7
         ///  Create new instance of Hl7Message 
         /// </summary>
         /// <param name="file">FileInfo of the file with the HL7 Message</param>
-        /// <exception cref="">InvalidDataException</exception>
+        /// <exception cref="InvalidDataException"></exception>
         public Hl7Message(FileInfo file)
         {
           
@@ -83,7 +89,41 @@ namespace HL7
                 br.Close();
 
         }
+              
+        /// <summary>
+        /// returns the original PDF binary data of the ZRI/ZPD segment
+        /// </summary>
+        /// <returns>PDF binary data byte[]</returns>
+        public byte[] GetOriginalBinaryDataPDF()
+        {
+            string pdfHl7Decoded = GetHl7DecodedZriSegment();
+            byte[] binaryData = GetUUDecodeData(pdfHl7Decoded);
+            return binaryData;
+        }
+               
+        /// <summary>
+        /// Saves the embedded ECG record as PDF
+        /// </summary>
+        /// <param name="path">Destination to save the PDF</param>
+        public void SavePDFFile(String path)
+        {
+            //UUDecoding here
+            byte[] decodedDataBytes = this.GetOriginalBinaryDataPDF();
 
+            FileStream pdfFileStream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
+            using (pdfFileStream)
+            {
+                BinaryWriter br = new BinaryWriter(pdfFileStream);
+                using (br)
+                {
+                    br.Write(decodedDataBytes);
+                    br.Flush();
+                }
+            }
+
+        }
+
+       
 
 
 
@@ -211,42 +251,6 @@ namespace HL7
             }
 
         }
-
-        /// <summary>
-        /// returns the original PDF binary data of the ZRI/ZPD segment
-        /// </summary>
-        /// <returns>PDF binary data byte[]</returns>
-        public byte[] GetOriginalBinaryDataPDF()
-        {
-            string pdfHl7Decoded = GetHl7DecodedZriSegment();
-            byte[] binaryData = GetUUDecodeData(pdfHl7Decoded);
-            return binaryData;
-        }
-
-        
-
-        /// <summary>
-        /// Saves the embedded ECG record as PDF
-        /// </summary>
-        /// <param name="path">Destination to save the PDF</param>
-        public void SavePDFFile(String path)
-        {
-            //UUDecoding here
-            byte[] decodedDataBytes = this.GetOriginalBinaryDataPDF();
-
-            FileStream pdfFileStream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
-            using (pdfFileStream)
-            {
-                BinaryWriter br = new BinaryWriter(pdfFileStream);
-                using (br)
-                {
-                    br.Write(decodedDataBytes);
-                    br.Flush();
-                }
-            }
-
-        }
-
         private bool IsHL7Message(string message)
         {
             if (message.Contains("PID") && message.Contains("MSH") && message.Contains("PV1"))
@@ -257,5 +261,6 @@ namespace HL7
 
         }
     }
+    
 }
 
