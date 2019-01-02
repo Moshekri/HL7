@@ -163,8 +163,7 @@ namespace HL7
                     }
                     else if (hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'D' && hl7AndUuencodedData[i + 4] == '\\' && hl7AndUuencodedData[i] == '\\' && hl7AndUuencodedData[i + 1] == 'X' && hl7AndUuencodedData[i + 2] == '0' && hl7AndUuencodedData[i + 3] == 'A' && hl7AndUuencodedData[i + 4] == '\\')
                     {
-                        //logger.Debug($"line number {lineNumber}  i : {i} (found \r\n)");
-                        //lineNumber++;
+                       
                         hl7DecodedDataList.Append('\r');
                         hl7DecodedDataList.Append('\n');
                         i += 8;
