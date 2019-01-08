@@ -64,10 +64,12 @@ namespace HL7
             }
             catch (Exception ex)
             {
+                br.Dispose();
+                fs.Dispose();
                 throw ex;
             }
 
-            byte[] msh = br.ReadBytes(3);
+           // byte[] msh = br.ReadBytes(3);
             
                 sr = new StreamReader(fs);
                 string message = sr.ReadToEnd();
@@ -81,6 +83,10 @@ namespace HL7
                 sr.Close();
                 fs.Close();
                 br.Close();
+
+            fs.Dispose();
+            br.Dispose();
+            sr.Dispose();
 
         }
 
