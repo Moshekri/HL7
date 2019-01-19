@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Linq;
 
 namespace HL7
 {
@@ -79,7 +80,7 @@ namespace HL7
                 }
                 OriginalMessage = message;
                 ParseMessage(message);
-                OriginalZriSegment = GetOriginalZriSegment(message);
+                //OriginalZriSegment = GetOriginalZriSegment(message);
                 sr.Close();
                 fs.Close();
                 br.Close();
@@ -96,13 +97,16 @@ namespace HL7
         private void ParseMessage(string message)
         {
             GetPatientDemographics(message);
-            GetOriginalZriSegment(message);
+            OriginalZriSegment = GetOriginalZriSegment(message);
 
         }
         private void GetPatientDemographics(string message)
         {
+            var lines = message.Split('\r');
 
-            string pid = message.Substring(message.IndexOf("PID", StringComparison.Ordinal), message.Length - message.IndexOf("PID", StringComparison.Ordinal));
+            //string pid = message.Substring(message.IndexOf("PID", StringComparison.Ordinal), message.Length - message.IndexOf("PID", StringComparison.Ordinal));
+
+            string pid = lines.FirstOrDefault(l => l.StartsWith("PID"));
             string[] pidComponents = pid.Split(new char[] { '|' }, StringSplitOptions.None);
             this.PatientId = pidComponents[2];
             this.Gender = pidComponents[8];
@@ -118,13 +122,22 @@ namespace HL7
             {
                 this.BirthDate = new DateTime(1800, 1, 1);
             }
-            this.LastName = pidComponents[5].Split('^')[0];
-            this.FirstName = pidComponents[5].Split('^')[1];
+
+            var names = pidComponents[5].Split('^');
+            if (names.Length > 1)
+            {
+                this.LastName = names[0];
+                this.FirstName = names[1];
+            }
+            
 
         }
         private string GetOriginalZriSegment(string message)
         {
-            return message.Substring(message.IndexOf("ZRI", StringComparison.Ordinal), message.Length - message.IndexOf("ZRI", StringComparison.Ordinal));
+            var lines = message.Split('\r');
+            var zri = lines.FirstOrDefault(l => l.StartsWith("ZRI"));
+            return zri;
+            
         }
         private string GetHl7DecodedZriSegment()
         {

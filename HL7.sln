@@ -5,8 +5,7 @@ VisualStudioVersion = 15.0.28010.2046
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HL7", "HL7.csproj", "{8C0C4F4B-EAC9-4FA9-BFF9-5AEC8A3BD76A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestProject2", "..\UnitTestProject2\UnitTestProject2.csproj", "{4A7B9A35-53BB-49B7-B9CD-4611A4F4A66D}"
-EndProject
+
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tester", "..\tester\tester.csproj", "{A6A02231-8F3C-408E-8FFB-D8A53D254532}"
 EndProject
 Global
